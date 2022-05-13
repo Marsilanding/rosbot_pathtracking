@@ -195,7 +195,7 @@ class Planner:
 			y.append(point[0]-20)
 			print(point[1]-20, point[0]-20)
 
-		ax.scatter(x, y, c='g', marker='x')
+		ax.plot(x, y, c='g', marker='x')
 		plt.show()
 			
 			
