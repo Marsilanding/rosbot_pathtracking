@@ -5,7 +5,7 @@ from math import pow, atan2, sqrt
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from geometry_msgs.msg import Pose, PoseWithCovariance
 from nav_msgs.msg import Odometry
-from uav_abstraction_layer.srv import GoToWaypoint, TakeOff
+from pathtracking.srv import GetPath, GetPathResponse
 import tf.transformations
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,6 +25,7 @@ class Planner:
 
 	def __init__(self):
 		self.pose_subscriber = rospy.Subscriber('/odom', Odometry, self.update_pose)
+		self.path_service = rospy.Service('/get_path', GetPath, self.goto)
 		self.pose_stamped = PoseStamped() 
 		self.pose_cov = PoseWithCovariance()
 		self.pose = Pose()
@@ -196,19 +197,19 @@ class Planner:
 			print(point[1]-20, point[0]-20)
 
 		ax.plot(x, y, c='g', marker='x')
-		plt.show()
+		#plt.show()
 			
 			
-		return path
+		return x, y, path
 
 
-	def goto(self):
+	def goto(self, req):
 		"""Moves the robot to the goal."""
 
 		goal_pose = Pose()
         
 		while True:
-			data = input("Set your x goal: ")
+			data = req.x
 			if data <= 20 and data >= -20:
 				goal_pose.position.x = data
 				break
@@ -216,7 +217,7 @@ class Planner:
 				print("x goal must be between -20, 20")
 
 		while True:
-			data = input("Set your y goal: ")
+			data = req.y
 			if data <= 20 and data >= -20:
 				goal_pose.position.y = data
 				break
@@ -234,13 +235,15 @@ class Planner:
 
 		goal_cell = [goal_y+20, goal_x+20]
 
-		path = self.compute_path(current_cell,goal_cell)
+		x, y, path = self.compute_path(current_cell,goal_cell)
+
+		return GetPathResponse(x, y)
       
 if __name__ == '__main__':
 	try:
 		rospy.init_node('robot_planner', anonymous=True)
 		x = Planner()
-		x.goto()
+		#x.goto()
 		rospy.spin()
 	except rospy.ROSInterruptException:
 		pass
