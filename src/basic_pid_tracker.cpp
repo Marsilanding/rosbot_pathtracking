@@ -2,6 +2,7 @@
 #include "pathtracking/GetPath.h"
 #include <cstdlib>
 
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,6 +25,8 @@
 nav_msgs::Odometry odom;
 geometry_msgs::Pose2D pose2d;
 geometry_msgs::Pose2D error;
+geometry_msgs::Pose2D prev_error;
+
 geometry_msgs::Pose2D ref;
 
 
@@ -47,12 +50,16 @@ void odom_cb(const nav_msgs::Odometry::ConstPtr& msg){
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "pure_pursuit");
-  if (argc != 3)
+  if (argc != 1)
   {
     ROS_INFO("usage: basic pid control algorithm");
   }
 
   ros::NodeHandle n;
+
+  n.setParam("rosbot_pid_tracker/P", 0.1);
+  n.setParam("rosbot_pid_tracker/I", 0.01);
+
   ros::ServiceClient client = n.serviceClient<pathtracking::GetPath>("get_path");
 
   ros::Publisher vel_pub = n.advertise<geometry_msgs::Twist>
@@ -70,12 +77,15 @@ int main(int argc, char **argv)
   twist.angular.y = 0.0;
   twist.angular.z = 0.0;
 
-  ros::Rate loop_rate(10);
+  int control_freq = 10; 
+  double tm = 1/control_freq;
+  ros::Rate loop_rate(control_freq);
   
   pathtracking::GetPath srv;
 
   double P = 0.1;
   double I = 0.01;
+
   double sat = 1.0;
   double sqrt_error = 0.0;
 
@@ -88,9 +98,15 @@ int main(int argc, char **argv)
 
   int path[100][2];
   int path_length = 0;
+  double goal_x, goal_y;
 
-  int goal_x = atoll(argv[1]);
-  int goal_y = atoll(argv[2]);
+  std::cout << "Type x goal: ";
+  std::cin >> goal_x;
+  std::cout << "Type x goal: ";
+  std::cin >> goal_y;
+
+  /*int goal_x = atoll(argv[1]);
+  int goal_y = atoll(argv[2]);*/
 
   srv.request.x = goal_x;
   srv.request.y = goal_y;
@@ -131,6 +147,9 @@ int main(int argc, char **argv)
     ref.theta = atan2(error.y, error.x);
 
     error.theta = ref.theta - pose2d.theta;
+
+    n.getParam("rosbot_pid_tracker/P", P);
+    n.getParam("rosbot_pid_tracker/I", I);
   
     /*Punto alcanzado*/
     if(error.theta <= orientation_angle_threshold && sqrt_error <= distance_threshold){  
@@ -147,8 +166,8 @@ int main(int argc, char **argv)
     }
     else if (abs(error.theta) <= orientation_angle_threshold && sqrt_error > distance_threshold){
       ROS_INFO("Moving to wp. Error =  %.2f", sqrt_error);
-      twist.linear.x = P*sqrt_error;
-      twist.linear.y = P*sqrt_error;
+      twist.linear.x = P*sqrt_error + I*(error.x - prev_error.x)*tm;
+      twist.linear.y = P*sqrt_error + I*(error.y - prev_error.y)*tm;
       twist.angular.z = 0.0;
 
       if (twist.linear.x >= sat) twist.linear.x = sat;
@@ -162,10 +181,10 @@ int main(int argc, char **argv)
       twist.linear.x = 0;
       twist.linear.y = 0;
 
-      /*if (ref.theta > pose2d.theta) twist.angular.z = P*abs(error.theta);
-      else twist.angular.z = -P*abs(error.theta);*/
+      /*if (ref.theta > pose2d.theta) twist.angular.z = P*abs(error.theta) + I*abs(error.theta - prev_error.theta)*tm;
+      else twist.angular.z = - (P*abs(error.theta) + + I*abs(error.theta - prev_error.theta)*tm);*/
 
-      twist.angular.z = P*error.theta;
+      twist.angular.z = P*error.theta + I*(error.theta - prev_error.theta)*tm;
 
       if (twist.angular.z >= sat) twist.angular.z = sat;
       else if (twist.angular.z <= sat) twist.angular.z = -sat;
@@ -181,6 +200,7 @@ int main(int argc, char **argv)
     }
 
     vel_pub.publish(twist);
+    prev_error = error;
     ros::spinOnce();
     loop_rate.sleep();
   }
