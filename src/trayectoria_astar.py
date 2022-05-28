@@ -8,11 +8,11 @@ from nav_msgs.msg import Odometry
 from pathtracking.srv import GetPath, GetPathResponse
 import tf.transformations
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
 
 class object:
     def __init__(self,name,lim_x,lim_y):
