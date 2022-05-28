@@ -48,12 +48,9 @@ class Planner:
 		"""Compute path."""
 		path = []
 		
-		ob1 = object("Obstacle1",[-3, 5],[-8, -7])
-		ob2 = object("Obstacle2",[9, 12],[0, 10])
-		ob3 = object("Obstacle3",[-4, 0],[4, 8])
-
+		ob1 = object("Obstacle1",[0, 1],[1, 2])
 	
-		object_list = [ob1, ob2, ob3]
+		object_list = [ob1]
 
 
 		dim_x = 40
