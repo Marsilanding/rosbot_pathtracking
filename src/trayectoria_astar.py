@@ -85,15 +85,15 @@ class Planner:
 			X.append(print_list[n][0])
 			Y.append(print_list[n][1])
 
-		ax.scatter(X, Y, c='r', marker='o')
+		#ax.scatter(X, Y, c='r', marker='o')
 
-		ax.set_xlabel('X Label')
-		ax.set_ylabel('Y Label')
+		#ax.set_xlabel('X Label')
+		#ax.set_ylabel('Y Label')
 
-		for element in object_list:
-			ax.text(element.lim_x[0],element.lim_y[0],element.name,color='blue')
+		#for element in object_list:
+		#	ax.text(element.lim_x[0],element.lim_y[0],element.name,color='blue')
 
-		ax.scatter(0, 0, 0, c='y', marker='x')
+		#ax.scatter(0, 0, 0, c='y', marker='x')
 
         ######################
         # 		   A*        #
@@ -193,7 +193,7 @@ class Planner:
 			y.append(point[0]-20)
 			print(point[1]-20, point[0]-20)
 
-		ax.plot(x, y, c='g', marker='x')
+		#ax.plot(x, y, c='g', marker='x')
 		#plt.show()
 			
 			
