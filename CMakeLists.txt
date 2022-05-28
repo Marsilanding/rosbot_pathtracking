@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   message_generation
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -138,13 +139,16 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(pure_pursuit src/pure_pursuit.cpp)
+add_executable(pure_pursuit_tf src/pure_pursuit.cpp)
 add_executable(basic_pid_tracker src/basic_pid_tracker.cpp)
 
 
 target_link_libraries(pure_pursuit ${catkin_LIBRARIES})
+target_link_libraries(pure_pursuit_tf ${catkin_LIBRARIES})
 target_link_libraries(basic_pid_tracker ${catkin_LIBRARIES})
 
 add_dependencies(pure_pursuit pathtracking_gencpp)
+add_dependencies(pure_pursuit_tf pathtracking_gencpp)
 add_dependencies(basic_pid_tracker pathtracking_gencpp)
 
 
