@@ -137,6 +137,7 @@ int main(int argc, char **argv)
 
   while(ros::ok())
   {
+    n.getParam("rosbot_pure_pursuit_tracker/LinearVel", linearSpeed);
     //ROS_INFO("Length of path = %d", pathSize);
     computeNextWayPoint(path, pathSize, lookAhead);
     angleSpeed = computeAlpha(path[nextWayPoint], lookAhead, currentAlpha);
