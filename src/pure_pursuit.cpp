@@ -39,7 +39,7 @@ void updatePos(const nav_msgs::Odometry::ConstPtr& msg){
   //ROS_INFO("Robot position \n\t x = %f \n\t y = %f", currentX, currentY);
 }
 
-void computeNextWayPoint(int path[100][2], int pathSize, float lookAhead)
+void computeNextWayPoint(float path[100][2], int pathSize, float lookAhead)
 {
   float lookaheadRelativeDistance;
   lookaheadRelativeDistance = sqrt(pow((currentX - (float)path[nextWayPoint][0]),2) + pow((currentY - (float)path[nextWayPoint][1]),2)) - lookAhead;
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 
   std::cout << "Type x goal: ";
   std::cin >> goalX;
-  std::cout << "Type x goal: ";
+  std::cout << "Type y goal: ";
   std::cin >> goalY;
 
   srv.request.x = goalX;
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
 
 
   int pathSize = 0;
-  int path[100][2];
+  float path[100][2];
   
 
   if (path_client.call(srv))
@@ -119,6 +119,8 @@ int main(int argc, char **argv)
         pathSize = i+1;
         break;
       }
+      path[i][0]+ = 0.5;
+      path[i][1]+ = 0.5;
     }
     ROS_INFO("Path received with %d waypoints", pathSize);
   }
@@ -142,8 +144,8 @@ int main(int argc, char **argv)
     computeNextWayPoint(path, pathSize, lookAhead);
     angleSpeed = computeAlpha(path[nextWayPoint], lookAhead, currentAlpha);
 
-    relativeDistance = sqrt(pow((currentX - (float)path[nextWayPoint][0]),2) + pow((currentY - (float)path[nextWayPoint][1]),2));
-    ROS_INFO("Moving to (%d,%d). Relative distance: %.2f. Yaw error: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
+    relativeDistance = sqrt(pow((currentX - path[nextWayPoint][0]),2) + pow((currentY - path[nextWayPoint][1]),2));
+    ROS_INFO("Moving to (%f,%f). Relative distance: %.2f. Yaw error: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
 
 
     command.angular.x = 0;
@@ -153,7 +155,7 @@ int main(int argc, char **argv)
     command.linear.y = 0;
     command.linear.z = 0;
 
-    if(path[nextWayPoint][0] == goalX && path[nextWayPoint][1] == goalY){
+    if(path[nextWayPoint][0] == (goalX + 0.5) && path[nextWayPoint][1] == (goalY + 0.5)){
       if (relativeDistance < admissibleDistanceToGoal) {
         command.angular.z = 0.0;
         command.linear.x = 0.0;
@@ -162,7 +164,7 @@ int main(int argc, char **argv)
     }
     else{
       computeNextWayPoint(path, pathSize, lookAhead);
-      ROS_INFO("Moving towards (%d,%d)", path[nextWayPoint][0], path[nextWayPoint][1]);
+      ROS_INFO("Moving towards (%f,%f)", path[nextWayPoint][0], path[nextWayPoint][1]);
       angleSpeed = computeAlpha(path[nextWayPoint], lookAhead, currentAlpha);
       ROS_INFO("Yaw error: %.2f", angleSpeed);
 
