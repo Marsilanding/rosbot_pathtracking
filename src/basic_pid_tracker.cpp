@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   double linear_speed = 0.2;
   double angular_speed = 0.1;
 
-  int path[100][2];
+  float path[100][2];
   int path_length = 0;
   double goal_x, goal_y;
 
@@ -114,9 +114,9 @@ int main(int argc, char **argv)
   if (client.call(srv))
   {
     path_length = sizeof(srv.response.x);
-    for(int i=0; i<100; i++){
-      path[i][0] = srv.response.x[i];
-      path[i][1] = srv.response.y[i];
+    for(int i=0; i<path_length; i++){
+      path[i][0] = srv.response.x[i] + 0.5;
+      path[i][1] = srv.response.y[i] + 0.5;
       if (path[i][0] == goal_x && path[i][1] == goal_y){
         path_length = i+1;
         break;
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     ref.x = path[i][0];
     ref.y = path[i][1];
 
-    ROS_INFO("Heading to waypoint %d: (%d,%d)", i, path[i][0], path[i][1]);
+    ROS_INFO("Heading to waypoint %d: (%f,%f)", i, path[i][0], path[i][1]);
     
     error.x = ref.x - pose2d.x;
     error.y = ref.y - pose2d.y;
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
       twist.linear.x = 0.0;
       twist.linear.y = 0.0;
       twist.angular.z = 0.0;
-      ROS_INFO("Waypoint %d: (%d,%d) reached", i, path[i][0], path[i][1]); 
+      ROS_INFO("Waypoint %d: (%f,%f) reached", i, path[i][0], path[i][1]); 
       if (path[i][0] == goal_x && path[i][1] == goal_y){
         ROS_INFO("Path completed");
         vel_pub.publish(twist); /*Para parar el robot*/
