@@ -50,7 +50,7 @@ void computeNextWayPoint(float path[100][2], int pathSize, float lookAhead)
   }
 }
 
-float computeAlpha(int *goal, float lookAhead, float currentAlpha)
+float computeAlpha(float *goal, float lookAhead, float currentAlpha)
 {
   // Hay que transformar las coordenadas globales del WayPoint a los ejes del robot
 
