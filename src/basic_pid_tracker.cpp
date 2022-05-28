@@ -113,14 +113,10 @@ int main(int argc, char **argv)
 
   if (client.call(srv))
   {
-    path_length = sizeof(srv.response.x);
+    path_length = srv.response.x.size();
     for(int i=0; i<path_length; i++){
       path[i][0] = srv.response.x[i] + 0.5;
       path[i][1] = srv.response.y[i] + 0.5;
-      if (path[i][0] == goal_x && path[i][1] == goal_y){
-        path_length = i+1;
-        break;
-      }
     }
     ROS_INFO("Path received with %d waypoints", path_length);
   }
@@ -130,7 +126,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  int i = 0;
+  int i = 1;
 
   while(ros::ok()){
 
@@ -157,7 +153,7 @@ int main(int argc, char **argv)
       twist.linear.y = 0.0;
       twist.angular.z = 0.0;
       ROS_INFO("Waypoint %d: (%f,%f) reached", i, path[i][0], path[i][1]); 
-      if (path[i][0] == goal_x && path[i][1] == goal_y){
+      if (path[i][0] == goal_x + 0.5 && path[i][1] == goal_y + 0.5){
         ROS_INFO("Path completed");
         vel_pub.publish(twist); /*Para parar el robot*/
         break;
@@ -181,10 +177,10 @@ int main(int argc, char **argv)
       twist.linear.x = 0;
       twist.linear.y = 0;
 
-      /*if (ref.theta > pose2d.theta) twist.angular.z = P*abs(error.theta) + I*abs(error.theta - prev_error.theta)*tm;
-      else twist.angular.z = - (P*abs(error.theta) + + I*abs(error.theta - prev_error.theta)*tm);*/
+      if (ref.theta > pose2d.theta) twist.angular.z = P*(error.theta) + I*(error.theta - prev_error.theta)*tm;
+      else twist.angular.z = - (P*(error.theta) + I*(error.theta - prev_error.theta)*tm);
 
-      twist.angular.z = P*error.theta + I*(error.theta - prev_error.theta)*tm;
+      //twist.angular.z = P*error.theta + I*(error.theta - prev_error.theta)*tm;
 
       if (twist.angular.z >= sat) twist.angular.z = sat;
       else if (twist.angular.z <= sat) twist.angular.z = -sat;
