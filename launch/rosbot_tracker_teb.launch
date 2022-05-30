@@ -41,6 +41,10 @@
     <rosparam file="$(find pathtracking)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find pathtracking)/config/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find pathtracking)/config/global_costmap_params.yaml" command="load" />
+    
+    <rosparam file="$(find pathtracking)/config/trajectory_planner_teb.yaml" command="load" />
+
+
   </node>
 
 </launch>
