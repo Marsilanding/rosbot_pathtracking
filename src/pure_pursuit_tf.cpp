@@ -69,11 +69,14 @@ float computeAlpha(geometry_msgs::PoseStamped &wp, float lookAhead, float curren
 
   r = (lookAhead*lookAhead)/(2*abs(gy));
 
-  alphaRef = (1/r)*(2*abs(gy)/(lookAhead*lookAhead);
+  alphaRef = (1/r)*(2*abs(gy))/(lookAhead*lookAhead);
 
   ROS_INFO("gy = %.2f, r = %.2f, alphaRef = %.2f", gy, r, alphaRef);
 
   alphaError = alphaRef - currentAlpha;
+
+  if (alphaError > 180) alphaError-=360;
+  else if (alphaError < -180) alphaError+= 360;
   
   return alphaRef;
 }
