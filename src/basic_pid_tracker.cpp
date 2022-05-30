@@ -183,8 +183,8 @@ int main(int argc, char **argv)
       twist.linear.y = 0;
       twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
 
-      if(error.theta > 0.0) twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
-      else twist.angular.z = - (P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm);
+      /*if(error.theta > 0.0) twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
+      else twist.angular.z = - (P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm);*/
 
     }
     else if (isOriented(error.theta, orientation_angle_threshold) && !reachedPoint(sqrt_error, distance_threshold)){
