@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Path2
       Splitter Ratio: 0.5
     Tree Height: 549
   - Class: rviz/Selection
@@ -192,7 +193,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
-      Color: 25; 255; 0
+      Color: 255; 0; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -263,7 +264,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.384673118591309
+      Distance: 9.250192642211914
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -278,10 +279,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5003982186317444
+      Pitch: 0.6553980708122253
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.5653982758522034
+      Yaw: 0.39039841294288635
     Saved: ~
 Window Geometry:
   Displays:
@@ -300,4 +301,4 @@ Window Geometry:
     collapsed: false
   Width: 1267
   X: 615
-  Y: 181
+  Y: 151
