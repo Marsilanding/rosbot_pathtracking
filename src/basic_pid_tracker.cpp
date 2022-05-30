@@ -87,11 +87,11 @@ int main(int argc, char **argv)
   
   pathtracking::GetPath srv;
 
-  double P_linear = 0.2;
+  double P_linear = 0.1;
   double I_linear = 0.01;
 
-  double P_angular = 1.0;
-  double I_angular = 0.0;
+  double P_angular = 0.1;
+  double I_angular = 0.01;
 
   n.setParam("rosbot_pid_tracker/P_linear", P_linear);
   n.setParam("rosbot_pid_tracker/I_linear", I_linear);
@@ -103,8 +103,8 @@ int main(int argc, char **argv)
 
   double sqrt_error = 0.0;
 
-  double orientation_angle_threshold = 0.2;
-  double distance_threshold = 0.15;
+  double orientation_angle_threshold = 5; //degrees
+  double distance_threshold = 0.15; //meters
 
 
   double linear_speed = 0.2;
@@ -141,6 +141,7 @@ int main(int argc, char **argv)
   }
 
   int i = 1;
+  bool oriented = 0;
 
   while(ros::ok()){
 
@@ -154,13 +155,17 @@ int main(int argc, char **argv)
 
     ref.theta = atan2(error.y, error.x);
 
-    error.theta = ref.theta - pose2d.theta;
+    error.theta = (ref.theta - pose2d.theta)*(180/3.141592);
+
+    if (error.theta > 180) error.theta = error.theta - 360;
+    else if (error.theta < -180) error.theta = 360 + error.theta;
 
     n.getParam("rosbot_pid_tracker/P_linear", P_linear);
     n.getParam("rosbot_pid_tracker/I_linear", I_linear);
 
     n.getParam("rosbot_pid_tracker/P_angular", P_angular);
     n.getParam("rosbot_pid_tracker/I_angular", I_angular);
+
 
 
     if(reachedPoint(sqrt_error, distance_threshold)){  
@@ -175,40 +180,31 @@ int main(int argc, char **argv)
         break;
       } 
       i++;
+      oriented = 0;
     }
 
-    else if  (!isOriented(error.theta, orientation_angle_threshold) && !reachedPoint(sqrt_error, distance_threshold)){
-      ROS_INFO("Correcting robot orientation");
-      twist.linear.x = 0;
-      twist.linear.y = 0;
+    else if (oriented){
+      twist.linear.x = P_linear*sqrt_error + I_linear*(error.x - prev_error.x)*tm;
       twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
 
       /*if(error.theta > 0.0) twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
       else twist.angular.z = - (P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm);*/
-
-    }
-    else if (isOriented(error.theta, orientation_angle_threshold) && !reachedPoint(sqrt_error, distance_threshold)){
-      ROS_INFO("Controlling linear speed");
-      twist.linear.x = P_linear*sqrt_error + I_linear*(error.x - prev_error.x)*tm;
-      twist.linear.y = P_linear*sqrt_error + I_linear*(error.y - prev_error.y)*tm;
-      twist.angular.z = 0.0;
       }
 
     else{
-      ROS_INFO("Wrong state!");
-      twist.linear.x = 0;
-      twist.linear.y = 0;
-      twist.angular.z = 0;
+      twist.linear.x = 0.0;
+      twist.angular.z = P_angular*error.theta + I_angular*(error.theta - prev_error.theta)*tm;
+       ROS_INFO("Orientating towards first goal");
+      if (isOriented(error.theta, orientation_angle_threshold)){
+        oriented = 1;
       }
+    }
 
-    ROS_INFO("Moving to wp %d: (%f,%f). Distance =  %.2f. Yaw error= %.2f degrees", i, path[i][0], path[i][1], sqrt_error, error.theta*(180/3.141592));
+    ROS_INFO("Moving to wp %d: (%f,%f). Distance =  %.2f. Yaw error= %.2f degrees", i, path[i][0], path[i][1], sqrt_error, error.theta);
 
     // Saturaciones
     if (twist.linear.x >= sat) twist.linear.x = sat;
     else if (twist.linear.x <= -sat) twist.linear.x = -sat;
-
-    if (twist.linear.y >= sat) twist.linear.y = sat;
-    else if (twist.linear.y <= -sat) twist.linear.y = -sat;
 
     if (twist.angular.z >= sat) twist.angular.z = sat;
     else if (twist.angular.z <= -sat) twist.angular.z = -sat;
