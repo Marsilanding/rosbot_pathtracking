@@ -48,7 +48,7 @@ class Planner:
 		"""Compute path."""
 		path = []
 		
-		ob1 = object("Obstacle1",[0, 1],[1, 2])
+		ob1 = object("Obstacle1",[1, 2],[0, 1])
 	
 		object_list = [ob1]
 

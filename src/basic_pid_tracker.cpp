@@ -54,6 +54,14 @@ bool reachedPoint(float error, float threshold){
   return error <= threshold;
 }
 
+double rad2deg(double angle){
+  double conversion {angle*(180/3.141592)};
+
+  if (conversion > 180) conversion = conversion - 360;
+  else if (conversion < -180) conversion = 360 + conversion;
+  return conversion;
+}
+
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "pure_pursuit");
@@ -155,10 +163,7 @@ int main(int argc, char **argv)
 
     ref.theta = atan2(error.y, error.x);
 
-    error.theta = (ref.theta - pose2d.theta)*(180/3.141592);
-
-    if (error.theta > 180) error.theta = error.theta - 360;
-    else if (error.theta < -180) error.theta = 360 + error.theta;
+    error.theta = rad2deg(ref.theta - pose2d.theta);
 
     n.getParam("rosbot_pid_tracker/P_linear", P_linear);
     n.getParam("rosbot_pid_tracker/I_linear", I_linear);
