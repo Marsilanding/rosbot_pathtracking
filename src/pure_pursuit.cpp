@@ -12,14 +12,25 @@
 
 nav_msgs::Odometry currentPose;
 float currentX, currentY, currentAlpha;
-float lookAhead = 2;
+float lookAhead = 1.5;
 float linearSpeed = 0.1;
 float sat = 1;
+
+int pathSize = 0;
 int nextWayPoint = 1;
 int goalX, goalY;
 
 float alphaRef = 0;
 float angleSpeed = 0;
+
+
+double rad2deg(double angle){
+  double conversion {angle*(180/3.141592)};
+
+  if (conversion > 180) conversion = conversion - 360;
+  else if (conversion < -180) conversion = 360 + conversion;
+  return conversion;
+}
 
 void updatePos(const nav_msgs::Odometry::ConstPtr& msg){
   currentPose = *msg;
@@ -55,20 +66,18 @@ float computeAlpha(float *goal, float lookAhead, float currentAlpha)
   // Hay que transformar las coordenadas globales del WayPoint a los ejes del robot
 
   // Calcula el vector desde el robot al punto
-  float Px, Py, gy;
+  float Px, Py, gy, r;
   float alphaError;
   Px = goal[0] - currentX;
   Py = goal[1] - currentY;
 
-  // Calcula la proyección del vector del punto 
-  // sobre el eje Y del robot
+  //gy = Py/cos(currentAlpha);
+  //r = (lookAhead*lookAhead)/(2*abs(gy));
+  //alphaRef = (1/r)*(2*abs(gy))/(lookAhead*lookAhead);
+  //alphaError = rad2deg(alphaRef - currentAlpha);
 
-  //gy = Px*sin(currentAlpha) + Py*cos(currentAlpha);
-
-  gy = Py/sin(currentAlpha);
-
-  alphaRef = (2*abs(gy)/(lookAhead*lookAhead));
-  alphaError = alphaRef - currentAlpha;
+  alphaRef = atan2(Py, Px);
+  alphaError = rad2deg(alphaRef - currentAlpha);
   
   return alphaError;
 }
@@ -104,23 +113,18 @@ int main(int argc, char **argv)
   n.getParam("rosbot_pure_pursuit_tracker/LookAhead", lookAhead);
   n.getParam("rosbot_pure_pursuit_tracker/LinearVel", linearSpeed);
 
-
-  int pathSize = 0;
   float path[100][2];
   
 
   if (path_client.call(srv))
   {
-    pathSize = sizeof(srv.response.x);
-    for(int i=0; i<100; i++){
+    pathSize =srv.response.x.size();
+    for(int i=0; i<pathSize; i++){
       path[i][0] = srv.response.x[i];
       path[i][1] = srv.response.y[i];
-      if (path[i][0] == goalX && path[i][1] == goalY){
-        pathSize = i+1;
-        break;
-      }
-      path[i][0]+ = 0.5;
-      path[i][1]+ = 0.5;
+
+      path[i][0]+= 0.5;
+      path[i][1]+= 0.5;
     }
     ROS_INFO("Path received with %d waypoints", pathSize);
   }
@@ -160,6 +164,7 @@ int main(int argc, char **argv)
         command.angular.z = 0.0;
         command.linear.x = 0.0;
         ROS_INFO("Path Completed");
+        break;
       }
     }
     else{

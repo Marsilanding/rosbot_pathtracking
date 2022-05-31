@@ -14,7 +14,7 @@
 
 nav_msgs::Odometry currentPose;
 float currentX, currentY, currentAlpha;
-float lookAhead = 1.5;
+float lookAhead = 3;
 float linearSpeed = 0.1;
 float sat = 1;
 int nextWayPoint = 1;
@@ -22,6 +22,12 @@ int goalX, goalY;
 
 float alphaRef = 0;
 float angleSpeed = 0;
+
+double rad2deg(double angle){
+  double conversion = angle*(180/3.141592);
+  if (conversion > 180) conversion = conversion - 360;
+  else if (angle < -180) conversion = 360 + conversion;
+}
 
 void updatePos(const nav_msgs::Odometry::ConstPtr& msg){
   currentPose = *msg;
@@ -73,12 +79,9 @@ float computeAlpha(geometry_msgs::PoseStamped &wp, float lookAhead, float curren
 
   ROS_INFO("gy = %.2f, r = %.2f, alphaRef = %.2f", gy, r, alphaRef);
 
-  alphaError = alphaRef - currentAlpha;
-
-  if (alphaError > 180) alphaError-=360;
-  else if (alphaError < -180) alphaError+= 360;
+  alphaError = rad2deg(alphaRef - currentAlpha);
   
-  return alphaRef;
+  return alphaError;
 }
 
 
@@ -137,7 +140,12 @@ int main(int argc, char **argv)
 
   ros::Rate r(SAMPLE_RATE); // 10 hz
   geometry_msgs::Twist command;
-  geometry_msgs::PoseStamped wp;
+  geometry_msgs::PoseStamped wp_global;
+  geometry_msgs::PoseStamped wp_local;
+  wp_global.header.frame_id = "odom";
+  wp_local.header.frame_id = "base_link";
+
+
   geometry_msgs::TransformStamped odom_to_base_link;
 
   tf2_ros::Buffer tf_buffer;
@@ -146,7 +154,7 @@ int main(int argc, char **argv)
 
   float angleSpeed = 0.0;
   float relativeDistance = 0.0;
-  float admissibleDistanceToGoal = 0.3;
+  float admissibleDistanceToGoal = 0.2;
 
   while(ros::ok())
   {
@@ -154,18 +162,16 @@ int main(int argc, char **argv)
   //ROS_INFO("Length of path = %d", pathSize);
 
     computeNextWayPoint(path, pathSize, lookAhead);
-    wp.pose.position.x = path[nextWayPoint][0];
-    wp.pose.position.y = path[nextWayPoint][1];
-    wp.header.frame_id = "odom";
-    angleSpeed = computeAlpha(wp, lookAhead, currentAlpha);
-    ROS_INFO("Moving to (%d,%d). Relative distance: %.2f. Yaw reference: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
-
-    wp.header.frame_id = "odom";
+    wp_global.pose.position.x = path[nextWayPoint][0];
+    wp_global.pose.position.y = path[nextWayPoint][1];
+    wp_global.header.frame_id = "odom";
 
     odom_to_base_link = tf_buffer.lookupTransform("base_link", "odom", ros::Time(0), ros::Duration(1.0) );
-    tf2::doTransform(wp, wp, odom_to_base_link); // robot_pose is the PoseStamped I want to transform
+    tf2::doTransform(wp_global, wp_local, odom_to_base_link); // robot_pose is the PoseStamped I want to transform
 
-    relativeDistance = sqrt(pow(wp.pose.position.x,2) + pow(wp.pose.position.y,2));
+    angleSpeed = computeAlpha(wp_local, lookAhead, currentAlpha);
+
+    relativeDistance = sqrt(pow(wp_local.pose.position.x,2) + pow(wp_local.pose.position.y,2));
     ROS_INFO("Moving to (%d,%d). Relative distance: %.2f. Yaw error: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
 
 
@@ -181,6 +187,7 @@ int main(int argc, char **argv)
         command.angular.z = 0.0;
         command.linear.x = 0.0;
         ROS_INFO("Path Completed");
+        break;
       }
     }
     else{
