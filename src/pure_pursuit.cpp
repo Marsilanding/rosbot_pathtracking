@@ -79,7 +79,7 @@ float computeAlpha(float *goal, float lookAhead, float currentAlpha)
   alphaRef = atan2(Py, Px);
   alphaError = rad2deg(alphaRef - currentAlpha);
   
-  return alphaError;
+  return alphaError*(3.141592/180);
 }
 
 
