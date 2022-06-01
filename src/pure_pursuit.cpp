@@ -163,6 +163,7 @@ int main(int argc, char **argv)
       if (relativeDistance < admissibleDistanceToGoal) {
         command.angular.z = 0.0;
         command.linear.x = 0.0;
+        cmd_pub.publish(command);
         ROS_INFO("Path Completed");
         break;
       }

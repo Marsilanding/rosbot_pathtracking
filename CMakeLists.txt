@@ -139,7 +139,7 @@ include_directories(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(pure_pursuit src/pure_pursuit.cpp)
-add_executable(pure_pursuit_tf src/pure_pursuit.cpp)
+add_executable(pure_pursuit_tf src/pure_pursuit_tf.cpp)
 add_executable(basic_pid_tracker src/basic_pid_tracker.cpp)
 
 
