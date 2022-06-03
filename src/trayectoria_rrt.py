@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import random
+from pathtracking.srv import GetPath, GetPathResponse
 
 
 
@@ -38,6 +39,7 @@ class Planner:
 		self.pose_stamped = PoseStamped() 
 		self.pose_cov = PoseWithCovariance()
 		self.pose = Pose()
+		self.path_service = rospy.Service('/get_path', GetPath, self.goto)
 	
         
 	def update_pose(self, data):
@@ -56,12 +58,10 @@ class Planner:
 		path = []
 
 	
-		ob1 = object("Obstacle1",[-3, 5],[-8, -7])
-		ob2 = object("Obstacle2",[9, 12],[0, 10])
-		ob3 = object("Obstacle3",[-4, 0],[4, 8])
+		ob1 = object("Obstacle1",[1, 2],[0, 1])
 
 
-		object_list = [ob1, ob2, ob3]
+		object_list = [ob1]
 
 		dim_x = 40
 		dim_y = 40
@@ -92,15 +92,15 @@ class Planner:
 			X.append(print_list[n][0])
 			Y.append(print_list[n][1])
 
-		ax.scatter(X, Y, c='r', marker='o')
+		#ax.scatter(X, Y, c='r', marker='o')
 
-		ax.set_xlabel('X Label')
-		ax.set_ylabel('Y Label')
+		#ax.set_xlabel('X Label')
+		#ax.set_ylabel('Y Label')
 
-		for element in object_list:
-			ax.text(element.lim_x[0],element.lim_y[0],element.name,color='blue')
+		#for element in object_list:
+			#ax.text(element.lim_x[0],element.lim_y[0],element.name,color='blue')
 
-		ax.scatter(0, 0, c='y', marker='x')
+		#ax.scatter(0, 0, c='y', marker='x')
 
 	
 
@@ -250,7 +250,7 @@ class Planner:
 			x_tree_s.append(point[0])
 			y_tree_s.append(point[1])
 
-		ax.plot(x_tree_s, y_tree_s, c='g', marker='o')
+		#ax.plot(x_tree_s, y_tree_s, c='g', marker='o')
 
 
 
@@ -258,17 +258,18 @@ class Planner:
 		print(tree_res_s)
 		print("FIN")
 
-		plt.show()
+		#plt.show()
 		
-		return tree_res_s
+		return x_tree, y_tree, tree
+		#return x_tree_s, y_tree_s, tree_res_s
 
-	def goto(self):
+	def goto(self, req):
 		"""Moves the robot to the goal."""
 		goal_pose = Pose()
 		# Get the input from the user.
 		# Test with -0.5,3.5 meters
 		while True:
-			data = input("Set your x goal: ")
+			data = req.x
 			if data <= 20 and data >= -20:
 				goal_pose.position.x = data
 				break
@@ -276,7 +277,7 @@ class Planner:
 				print("x goal must be between -20, 20")
 
 		while True:
-			data = input("Set your y goal: ")
+			data = req.y
 			if data <= 20 and data >= -20:
 				goal_pose.position.y = data
 				break
@@ -295,7 +296,9 @@ class Planner:
 
 		goal_cell = [goal_y, goal_x]
 
-		path = self.compute_path(current_cell,goal_cell)
+		x, y, path = self.compute_path(current_cell,goal_cell)
+
+		return GetPathResponse(x, y)
 
 
         
@@ -304,7 +307,7 @@ if __name__ == '__main__':
         rospy.init_node('robot_planner', anonymous=True)
 
         x = Planner()
-        x.goto()
+        #x.goto()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass

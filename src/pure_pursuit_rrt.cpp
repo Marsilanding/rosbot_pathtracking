@@ -9,24 +9,27 @@
 
 #include <tf/tf.h>
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf2_ros/transform_listener.h>
 
 nav_msgs::Odometry currentPose;
 float currentX, currentY, currentAlpha;
-float lookAhead = 3;
+float lookAhead = 1.5;
 float linearSpeed = 0.1;
 float sat = 1;
+
+int pathSize = 0;
 int nextWayPoint = 1;
-int goalX, goalY;
+float goalX, goalY;
 
 float alphaRef = 0;
 float angleSpeed = 0;
 
+
 double rad2deg(double angle){
-  double conversion = angle*(180/3.141592);
+  double conversion {angle*(180/3.141592)};
+
   if (conversion > 180) conversion = conversion - 360;
-  else if (angle < -180) conversion = 360 + conversion;
+  else if (conversion < -180) conversion = 360 + conversion;
+  return conversion;
 }
 
 void updatePos(const nav_msgs::Odometry::ConstPtr& msg){
@@ -47,7 +50,7 @@ void updatePos(const nav_msgs::Odometry::ConstPtr& msg){
   //ROS_INFO("Robot position \n\t x = %f \n\t y = %f", currentX, currentY);
 }
 
-void computeNextWayPoint(int path[100][2], int pathSize, float lookAhead)
+void computeNextWayPoint(float path[100][2], int pathSize, float lookAhead)
 {
   float lookaheadRelativeDistance;
   lookaheadRelativeDistance = sqrt(pow((currentX - (float)path[nextWayPoint][0]),2) + pow((currentY - (float)path[nextWayPoint][1]),2)) - lookAhead;
@@ -58,30 +61,25 @@ void computeNextWayPoint(int path[100][2], int pathSize, float lookAhead)
   }
 }
 
-float computeAlpha(geometry_msgs::PoseStamped &wp, float lookAhead, float currentAlpha)
+float computeAlpha(float *goal, float lookAhead, float currentAlpha)
 {
   // Hay que transformar las coordenadas globales del WayPoint a los ejes del robot
 
   // Calcula el vector desde el robot al punto
-  int Px, Py;
-  float gy, r;
-  float thetaWorld, relativeTheta;
+  float Px, Py, gy, r;
   float alphaError;
+  Px = goal[0] - currentX;
+  Py = goal[1] - currentY;
 
-  Px = wp.pose.position.x;
-  Py = wp.pose.position.y;
+  //gy = Py/cos(currentAlpha);
+  //r = (lookAhead*lookAhead)/(2*abs(gy));
+  //alphaRef = (1/r)*(2*abs(gy))/(lookAhead*lookAhead);
+  //alphaError = rad2deg(alphaRef - currentAlpha);
 
-  gy = Py;
-
-  r = (lookAhead*lookAhead)/(2*abs(gy));
-
-  alphaRef = (1/r)*(2*abs(gy))/(lookAhead*lookAhead);
-
-  ROS_INFO("gy = %.2f, r = %.2f, alphaRef = %.2f", gy, r, alphaRef);
-
+  alphaRef = atan2(Py, Px);
   alphaError = rad2deg(alphaRef - currentAlpha);
   
-  return alphaError;
+  return alphaError*(3.141592/180);
 }
 
 
@@ -106,7 +104,7 @@ int main(int argc, char **argv)
 
   std::cout << "Type x goal: ";
   std::cin >> goalX;
-  std::cout << "Type x goal: ";
+  std::cout << "Type y goal: ";
   std::cin >> goalY;
 
   srv.request.x = goalX;
@@ -115,20 +113,15 @@ int main(int argc, char **argv)
   n.getParam("rosbot_pure_pursuit_tracker/LookAhead", lookAhead);
   n.getParam("rosbot_pure_pursuit_tracker/LinearVel", linearSpeed);
 
-  int pathSize = 0;
-  int path[100][2];
+  float path[100][2];
   
 
   if (path_client.call(srv))
   {
-    pathSize = sizeof(srv.response.x);
-    for(int i=0; i<100; i++){
+    pathSize =srv.response.x.size();
+    for(int i=0; i<pathSize; i++){
       path[i][0] = srv.response.x[i];
       path[i][1] = srv.response.y[i];
-      if (path[i][0] == goalX && path[i][1] == goalY){
-        pathSize = i+1;
-        break;
-      }
     }
     ROS_INFO("Path received with %d waypoints", pathSize);
   }
@@ -140,39 +133,20 @@ int main(int argc, char **argv)
 
   ros::Rate r(SAMPLE_RATE); // 10 hz
   geometry_msgs::Twist command;
-  geometry_msgs::PoseStamped wp_global;
-  geometry_msgs::PoseStamped wp_local;
-  wp_global.header.frame_id = "odom";
-  wp_local.header.frame_id = "base_link";
-
-
-  geometry_msgs::TransformStamped odom_to_base_link;
-
-  tf2_ros::Buffer tf_buffer;
-  tf2_ros::TransformListener tf2_listener(tf_buffer);
-
 
   float angleSpeed = 0.0;
   float relativeDistance = 0.0;
-  float admissibleDistanceToGoal = 0.2;
+  float admissibleDistanceToGoal = 0.25;
 
   while(ros::ok())
   {
-
-  //ROS_INFO("Length of path = %d", pathSize);
-
+    n.getParam("rosbot_pure_pursuit_tracker/LinearVel", linearSpeed);
+    //ROS_INFO("Length of path = %d", pathSize);
     computeNextWayPoint(path, pathSize, lookAhead);
-    wp_global.pose.position.x = path[nextWayPoint][0];
-    wp_global.pose.position.y = path[nextWayPoint][1];
-    wp_global.header.frame_id = "odom";
+    angleSpeed = computeAlpha(path[nextWayPoint], lookAhead, currentAlpha);
 
-    odom_to_base_link = tf_buffer.lookupTransform("base_link", "odom", ros::Time(0), ros::Duration(1.0) );
-    tf2::doTransform(wp_global, wp_local, odom_to_base_link); // robot_pose is the PoseStamped I want to transform
-
-    angleSpeed = computeAlpha(wp_local, lookAhead, currentAlpha);
-
-    relativeDistance = sqrt(pow(wp_local.pose.position.x,2) + pow(wp_local.pose.position.y,2));
-    ROS_INFO("Moving to (%d,%d). Relative distance: %.2f. Yaw error: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
+    relativeDistance = sqrt(pow((currentX - path[nextWayPoint][0]),2) + pow((currentY - path[nextWayPoint][1]),2));
+    ROS_INFO("Moving to (%f,%f). Relative distance: %.2f. Yaw error: %.2f", path[nextWayPoint][0], path[nextWayPoint][1], relativeDistance, angleSpeed);
 
 
     command.angular.x = 0;
@@ -182,15 +156,20 @@ int main(int argc, char **argv)
     command.linear.y = 0;
     command.linear.z = 0;
 
-    if(path[nextWayPoint][0] == goalX && path[nextWayPoint][1] == goalY){
+    if(path[nextWayPoint][0] == (goalX) && path[nextWayPoint][1] == (goalY)){
       if (relativeDistance < admissibleDistanceToGoal) {
         command.angular.z = 0.0;
         command.linear.x = 0.0;
+        cmd_pub.publish(command);
         ROS_INFO("Path Completed");
         break;
       }
     }
     else{
+      computeNextWayPoint(path, pathSize, lookAhead);
+      ROS_INFO("Moving towards (%f,%f)", path[nextWayPoint][0], path[nextWayPoint][1]);
+      angleSpeed = computeAlpha(path[nextWayPoint], lookAhead, currentAlpha);
+      ROS_INFO("Yaw error: %.2f", angleSpeed);
 
       command.angular.x = 0;
       command.angular.y = 0;
