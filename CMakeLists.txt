@@ -140,18 +140,20 @@ include_directories(
 
 add_executable(pure_pursuit src/pure_pursuit.cpp)
 add_executable(pure_pursuit_rrt src/pure_pursuit_rrt.cpp)
-
 add_executable(basic_pid_tracker src/basic_pid_tracker.cpp)
-
+add_executable(basic_pid_tracker_rrt src/basic_pid_tracker_rrt.cpp)
 
 
 target_link_libraries(pure_pursuit ${catkin_LIBRARIES})
 target_link_libraries(pure_pursuit_rrt ${catkin_LIBRARIES})
 target_link_libraries(basic_pid_tracker ${catkin_LIBRARIES})
+target_link_libraries(basic_pid_tracker_rrt ${catkin_LIBRARIES})
 
 add_dependencies(pure_pursuit pathtracking_gencpp)
 add_dependencies(pure_pursuit_rrt pathtracking_gencpp)
 add_dependencies(basic_pid_tracker pathtracking_gencpp)
+add_dependencies(basic_pid_tracker_rrt pathtracking_gencpp)
+
 
 
 #############

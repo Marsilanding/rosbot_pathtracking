@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
   float path[100][2];
   int path_length = 0;
-  double goal_x, goal_y;
+  float goal_x, goal_y;
 
   std::cout << "Type x goal: ";
   std::cin >> goal_x;
@@ -137,8 +137,8 @@ int main(int argc, char **argv)
   {
     path_length = srv.response.x.size();
     for(int i=0; i<path_length; i++){
-      path[i][0] = srv.response.x[i] + 0.5;
-      path[i][1] = srv.response.y[i] + 0.5;
+      path[i][0] = srv.response.x[i];
+      path[i][1] = srv.response.y[i];
     }
     ROS_INFO("Path received with %d waypoints", path_length);
   }
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
     if(reachedPoint(sqrt_error, distance_threshold)){  
       ROS_INFO("Waypoint %d: (%f,%f) reached", i, path[i][0], path[i][1]); 
       
-      if (path[i][0] == goal_x + 0.5 && path[i][1] == goal_y + 0.5){
+      if (path[i][0] == goal_x && path[i][1] == goal_y){
         twist.linear.x = 0.0;
         twist.linear.y = 0.0;
         twist.angular.z = 0.0;
