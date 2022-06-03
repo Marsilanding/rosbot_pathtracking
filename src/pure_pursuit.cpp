@@ -122,9 +122,6 @@ int main(int argc, char **argv)
     for(int i=0; i<pathSize; i++){
       path[i][0] = srv.response.x[i];
       path[i][1] = srv.response.y[i];
-
-      path[i][0]+= 0.5;
-      path[i][1]+= 0.5;
     }
     ROS_INFO("Path received with %d waypoints", pathSize);
   }
@@ -159,7 +156,7 @@ int main(int argc, char **argv)
     command.linear.y = 0;
     command.linear.z = 0;
 
-    if(path[nextWayPoint][0] == (goalX + 0.5) && path[nextWayPoint][1] == (goalY + 0.5)){
+    if(path[nextWayPoint][0] == (goalX) && path[nextWayPoint][1] == (goalY)){
       if (relativeDistance < admissibleDistanceToGoal) {
         command.angular.z = 0.0;
         command.linear.x = 0.0;

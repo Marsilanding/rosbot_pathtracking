@@ -29,7 +29,11 @@ class Planner:
 		self.pose_stamped = PoseStamped() 
 		self.pose_cov = PoseWithCovariance()
 		self.pose = Pose()
-	
+		
+		self.map_res = 0.5
+		self.dim_x = 80
+		self.dim_y = 80
+
         
 	def update_pose(self, data):
 		"""Callback function which is called when a new message of type Pose is
@@ -46,6 +50,7 @@ class Planner:
 
 	def compute_path(self, start_cell, goal_cell):
 		"""Compute path."""
+
 		path = []
 		
 		ob1 = object("Obstacle1",[1, 2],[0, 1])
@@ -53,13 +58,10 @@ class Planner:
 		object_list = [ob1]
 
 
-		dim_x = 40
-		dim_y = 40
-
-		gen_map = np.zeros((dim_x, dim_y))
+		gen_map = np.zeros((self.dim_x, self.dim_y))
 		print_list = []
 
-		offset_x = -dim_x/2
+		offset_x = -self.dim_x/2
 		offset_y = offset_x
 
 		def evaluation(ob_ev,x,y):
@@ -70,8 +72,8 @@ class Planner:
 				return 0
 
 		
-		for y in range(dim_y):
-			for x in range(dim_x):
+		for y in range(self.dim_y):
+			for x in range(self.dim_x):
 				for j in range(len(object_list)):
 					if evaluation(object_list[j],x,y) == 1:
 						gen_map[x,y] = 1
@@ -189,9 +191,9 @@ class Planner:
 		y = []
 			
 		for point in path:
-			x.append(point[1]-20)
-			y.append(point[0]-20)
-			print(point[1]-20, point[0]-20)
+			x.append((point[1]-self.dim_x/2)*self.map_res)
+			y.append((point[0]-self.dim_y/2)*self.map_res)
+			print((point[1]-self.dim_x/2)*self.map_res, (point[0]-self.dim_y/2)*self.map_res)
 
 		#ax.plot(x, y, c='g', marker='x')
 		#plt.show()
@@ -222,15 +224,27 @@ class Planner:
 				print("y goal must be between -20, 20")
 
 
-		current_y= math.trunc(self.pose.position.y)
-		current_x= math.trunc(self.pose.position.x)
+		if ((self.pose.position.y%1) >= 0.5): current_y = math.trunc(self.pose.position.y) + 0.5
+		else: current_y = math.trunc(self.pose.position.y)
 
-		current_cell = [current_y+20, current_x+20]
+		if (self.pose.position.x%1) >= 0.5: current_x = math.trunc(self.pose.position.x) + 0.5
+		else: current_x = math.trunc(self.pose.position.x)
 
-		goal_y= math.trunc(goal_pose.position.y)
-		goal_x= math.trunc(goal_pose.position.x)
+		current_cell = [int(current_y/self.map_res + self.dim_y/2), int(current_x/self.map_res + self.dim_x/2)]
 
-		goal_cell = [goal_y+20, goal_x+20]
+		print("Current cell: ", current_cell)
+		if ((abs(req.y)%1) >= 0.5): goal_y = (math.trunc(req.y) + 0.5)
+		else: goal_y = math.trunc(req.y)
+
+		if ((abs(req.x)%1) >= 0.5): goal_x = (math.trunc(req.x) + 0.5)
+		else: goal_x = math.trunc(req.x)
+
+		#goal_y= math.trunc(goal_pose.position.y)
+		#goal_x= math.trunc(goal_pose.position.x)
+
+		goal_cell = [int(goal_y/self.map_res + self.dim_y/2), int(goal_x/self.map_res + self.dim_x/2)]
+
+		print("Goal cell: ", goal_cell)
 
 		x, y, path = self.compute_path(current_cell,goal_cell)
 
