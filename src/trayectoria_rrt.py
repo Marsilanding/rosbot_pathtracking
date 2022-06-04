@@ -5,19 +5,12 @@ from math import pow, atan2, sqrt
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from geometry_msgs.msg import Pose, PoseWithCovariance
 from nav_msgs.msg import Odometry
-from uav_abstraction_layer.srv import GoToWaypoint, TakeOff
 import tf.transformations
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 import random
 from pathtracking.srv import GetPath, GetPathResponse
 
-
-
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
 
 class object:
     def __init__(self,name,lim_x,lim_y):
@@ -59,9 +52,11 @@ class Planner:
 
 	
 		ob1 = object("Obstacle1",[1, 2],[0, 1])
-
-
-		object_list = [ob1]
+		ob2 = object("Obstacle2", [-0.25, 3.25],[-0.25, -1])
+		ob3 = object("Obstacle3", [0, 3], [2, 3])
+		ob4 = object("Obstacle4", [-0.25, -1],[-0.25, 2])
+		ob5 = object("Obstacle5", [3.25, 4], [-0.25,2])
+		object_list = [ob1, ob2, ob3, ob4, ob5]
 
 		dim_x = 40
 		dim_y = 40
@@ -192,7 +187,7 @@ class Planner:
 			x_tree.append(point[0])
 			y_tree.append(point[1])
 
-		ax.plot(x_tree, y_tree, c='b', marker='x')
+		#ax.plot(x_tree, y_tree, c='b', marker='x')
 
 		print("Arbol sin suavizar: ")
 		print(tree_res)

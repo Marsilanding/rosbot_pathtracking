@@ -53,7 +53,7 @@ class Planner:
 
 		path = []
 		
-		ob1 = object("Obstacle1",[1, 2],[0, 1])
+		ob1 = object("Obstacle1",[2, 3],[0, 1])
 	
 		object_list = [ob1]
 
